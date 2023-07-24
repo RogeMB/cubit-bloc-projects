@@ -1,2 +1,2 @@
 # cubit-bloc-projects
-Differents projects with cubit and bloc.
+Differents Flutter projects with Cubit and BloC.
