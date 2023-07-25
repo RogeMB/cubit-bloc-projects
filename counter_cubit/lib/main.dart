@@ -1,4 +1,4 @@
-import 'package:counter_cubit/features/home/presentation/home_view.dart';
+import 'package:counter_cubit/config/router/app_router.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -10,14 +10,14 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         primarySwatch: Colors.amber,
         // colorSchemeSeed: Colors.deepPurple,
       ),
-      home: const HomeView(),
+      routerConfig: appRouter,
     );
   }
 }
