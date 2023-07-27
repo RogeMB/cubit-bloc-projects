@@ -1,17 +1,17 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:equatable/equatable.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first, must_be_immutable
 import 'package:isar/isar.dart';
 
 part 'price_entity.g.dart';
 
 @embedded
-class PriceEntity extends Equatable {
-  final String name;
-  final double price;
-  const PriceEntity({
-    required this.name,
-    required this.price,
+class PriceEntity {
+  String? name;
+  double? price;
+  PriceEntity({
+    this.name,
+    this.price,
   });
+
 
   PriceEntity copyWith({
     String? name,
@@ -24,8 +24,17 @@ class PriceEntity extends Equatable {
   }
 
   @override
-  bool get stringify => true;
+  String toString() => 'PriceEntity(name: $name, price: $price)';
 
   @override
-  List<Object> get props => [name, price];
+  bool operator ==(covariant PriceEntity other) {
+    if (identical(this, other)) return true;
+  
+    return 
+      other.name == name &&
+      other.price == price;
+  }
+
+  @override
+  int get hashCode => name.hashCode ^ price.hashCode;
 }

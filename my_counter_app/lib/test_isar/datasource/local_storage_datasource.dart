@@ -4,6 +4,7 @@ abstract class LocalStorageDatasource {
   Future<void> addOrder({required OrderProduct orderProduct});
   Future<OrderProduct> getOrder({required int id});
   Future<List<OrderProduct>> getOrders();
-  Future<void> deleteOrder({required int id});
+  Future<void> deleteOrder({required OrderProduct orderProduct});
   Future<OrderProduct> putOrder({required OrderProduct orderProduct});
+  Future<bool> compareOrder({required OrderProduct orderProduct});
 }

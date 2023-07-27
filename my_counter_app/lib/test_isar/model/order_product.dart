@@ -1,95 +1,97 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
+// ignore_for_file: public_member_api_docs, sort_constructors_first, must_be_immutable
+import 'package:equatable/equatable.dart';
 import 'package:isar/isar.dart';
 
-import 'subproduct_entity.dart';
+import 'menu_product_entity.dart';
 import 'price_entity.dart';
+import 'subproduct_entity.dart';
 
 part 'order_product.g.dart';
 
-@collection
-class OrderProduct {
-  Id? isarId;
+@Collection(inheritance: false)
+class OrderProduct extends Equatable {
+  final Id isarId = Isar.autoIncrement;
 
   final int id;
+  @Name("product_name")
   final String productName;
   final PriceEntity rates;
   final bool isMenu;
-  final SubproductEntity bases; // list
-  final SubproductEntity optionals;//list
-  final SubproductEntity extras;//list
-  final int? quantity;
-  final double? unitPrice;
-  final MenuProductEntity //list
-  @Name("final_price")
+  final List<SubproductEntity> bases;
+  final List<SubproductEntity> optionals;
+  final List<SubproductEntity> extras;
+  final int quantity;
+  @Name("unit_price")
+  final double unitPrice;
+  @Name("menu_product_entity")
+  final List<MenuProductEntity> menuProductEntity;
+  @Name("business_info")
   final int businessInfo;
-  final double? totalPrice;
+  @Name("total_price")
+  final double totalPrice;
 
-  OrderProduct({
-    this.id,
-    this.name,
-    this.basse,
-    this.mainOptional,
-    this.optionals,
-    this.extra,
-    this.unitPrice,
-    this.quantity,
-    this.finalPrice,
+  const OrderProduct({
+    required this.id,
+    required this.productName,
+    required this.rates,
+    required this.isMenu,
+    required this.bases,
+    required this.optionals,
+    required this.extras,
+    required this.quantity,
+    required this.unitPrice,
+    required this.menuProductEntity,
+    required this.businessInfo,
+    required this.totalPrice,
   });
 
   OrderProduct copyWith({
     int? id,
-    String? name,
-    Tarifa? basse,
-    Subproduct? mainOptional,
-    Subproduct? optionals,
-    Subproduct? extra,
-    double? unitPrice,
+    String? productName,
+    PriceEntity? rates,
+    bool? isMenu,
+    List<SubproductEntity>? bases,
+    List<SubproductEntity>? optionals,
+    List<SubproductEntity>? extras,
     int? quantity,
-    double? finalPrice,
+    double? unitPrice,
+    List<MenuProductEntity>? menuProductEntity,
+    int? businessInfo,
+    double? totalPrice,
   }) {
     return OrderProduct(
       id: id ?? this.id,
-      name: name ?? this.name,
-      basse: basse ?? this.basse,
-      mainOptional: mainOptional ?? this.mainOptional,
+      productName: productName ?? this.productName,
+      rates: rates ?? this.rates,
+      isMenu: isMenu ?? this.isMenu,
+      bases: bases ?? this.bases,
       optionals: optionals ?? this.optionals,
-      extra: extra ?? this.extra,
-      unitPrice: unitPrice ?? this.unitPrice,
+      extras: extras ?? this.extras,
       quantity: quantity ?? this.quantity,
-      finalPrice: finalPrice ?? this.finalPrice,
+      unitPrice: unitPrice ?? this.unitPrice,
+      menuProductEntity: menuProductEntity ?? this.menuProductEntity,
+      businessInfo: businessInfo ?? this.businessInfo,
+      totalPrice: totalPrice ?? this.totalPrice,
     );
   }
 
   @override
-  String toString() {
-    return 'OrderProduct(id: $id, name: $name, basse: $basse, mainOptional: $mainOptional, optionals: $optionals, extra: $extra, unitPrice: $unitPrice, quantity: $quantity, finalPrice: $finalPrice)';
-  }
+  bool get stringify => true;
 
+  @ignore
   @override
-  bool operator ==(covariant OrderProduct other) {
-    if (identical(this, other)) return true;
-
-    return other.id == id &&
-        other.name == name &&
-        other.basse == basse &&
-        other.mainOptional == mainOptional &&
-        other.optionals == optionals &&
-        other.extra == extra &&
-        other.unitPrice == unitPrice &&
-        other.quantity == quantity &&
-        other.finalPrice == finalPrice;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-        name.hashCode ^
-        basse.hashCode ^
-        mainOptional.hashCode ^
-        optionals.hashCode ^
-        extra.hashCode ^
-        unitPrice.hashCode ^
-        quantity.hashCode ^
-        finalPrice.hashCode;
+  List<Object> get props {
+    return [
+      id,
+      productName,
+      rates,
+      isMenu,
+      bases,
+      optionals,
+      extras,
+      unitPrice,
+      menuProductEntity,
+      businessInfo,
+    ];
   }
 }
