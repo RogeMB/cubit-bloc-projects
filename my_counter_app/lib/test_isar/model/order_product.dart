@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, must_be_immutable
 import 'package:equatable/equatable.dart';
 import 'package:isar/isar.dart';
+import 'package:uuid/uuid.dart';
 
 import 'menu_product_entity.dart';
 import 'price_entity.dart';
@@ -10,7 +11,7 @@ part 'order_product.g.dart';
 
 @Collection(inheritance: false)
 class OrderProduct extends Equatable {
-  final Id isarId = Isar.autoIncrement;
+  Id? isarId;
 
   final int id;
   @Name("product_name")
@@ -20,17 +21,20 @@ class OrderProduct extends Equatable {
   final List<SubproductEntity> bases;
   final List<SubproductEntity> optionals;
   final List<SubproductEntity> extras;
-  final int quantity;
+  int quantity;
+  @Index(unique: true, replace: false)
+  final String uuid = const Uuid().v4();
   @Name("unit_price")
-  final double unitPrice;
+  double unitPrice;
   @Name("menu_product_entity")
   final List<MenuProductEntity> menuProductEntity;
   @Name("business_info")
   final int businessInfo;
   @Name("total_price")
-  final double totalPrice;
-
-  const OrderProduct({
+  double totalPrice;
+  
+  OrderProduct({
+    this.isarId,
     required this.id,
     required this.productName,
     required this.rates,
@@ -46,6 +50,7 @@ class OrderProduct extends Equatable {
   });
 
   OrderProduct copyWith({
+    Id? isarId,
     int? id,
     String? productName,
     PriceEntity? rates,
@@ -60,6 +65,7 @@ class OrderProduct extends Equatable {
     double? totalPrice,
   }) {
     return OrderProduct(
+      isarId: isarId ?? this.isarId,
       id: id ?? this.id,
       productName: productName ?? this.productName,
       rates: rates ?? this.rates,
@@ -78,8 +84,8 @@ class OrderProduct extends Equatable {
   @override
   bool get stringify => true;
 
-  @ignore
   @override
+  @ignore
   List<Object> get props {
     return [
       id,
@@ -89,7 +95,6 @@ class OrderProduct extends Equatable {
       bases,
       optionals,
       extras,
-      unitPrice,
       menuProductEntity,
       businessInfo,
     ];

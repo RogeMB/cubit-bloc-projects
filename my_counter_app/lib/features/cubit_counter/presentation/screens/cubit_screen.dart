@@ -1,6 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:isar/isar.dart';
+import 'package:my_counter_app/test_isar/datasource/local_storage_datasource.dart';
 import 'package:my_counter_app/test_isar/datasource_impl/isar_datasource_impl.dart';
 import 'package:my_counter_app/test_isar/model/menu_product_entity.dart';
 import 'package:my_counter_app/test_isar/model/order_product.dart';
@@ -27,10 +28,7 @@ class _CubitCounterView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final PriceEntity tarifa1 = PriceEntity(name: 'Tarifa 1', price: 20);
-    final PriceEntity tarifa2 = PriceEntity(name: 'Tarifa 2', price: 30);
-    if (kDebugMode) {
-      print(tarifa2);
-    }
+    //final PriceEntity tarifa2 = PriceEntity(name: 'Tarifa 2', price: 30);
 
     final SubproductEntity subproduct1 =
         SubproductEntity(name: 'Subproduct 1', price: 2);
@@ -109,7 +107,8 @@ class _CubitCounterView extends StatelessWidget {
           FloatingActionButton(
             onPressed: () {
               BlocProvider.of<CounterCubit>(context).increment();
-              IsarDatasource().addOrder(orderProduct: orderProduct);
+              IsarDatasource().addOrPutOrder(orderProduct: orderProduct);
+              IsarDatasource().addOrPutOrder(orderProduct: orderProduct2);
             },
             heroTag: 'Increment',
             child: const Icon(Icons.add),
@@ -118,19 +117,19 @@ class _CubitCounterView extends StatelessWidget {
           FloatingActionButton(
             onPressed: () {
               BlocProvider.of<CounterCubit>(context).reset();
-              IsarDatasource().deleteOrder(orderProduct: orderProduct);
+              IsarDatasource().deleteOrder(orderProduct: orderProduct2);
             },
             heroTag: 'Reset',
             child: const Text('CE'),
           ),
           const SizedBox(height: 5.0),
           FloatingActionButton(
-            onPressed: () {
+            onPressed: () async {
               BlocProvider.of<CounterCubit>(context).decrement();
-
-              OrderProduct orderProduct =
-                  IsarDatasource().getOrder(id: orderProduct.isarId);
-              IsarDatasource().addOrder(orderProduct: orderProduct2);
+              // orderProduct = await IsarDatasource().getOrder(id: 4);
+              orderProduct.quantity = 0;
+              orderProduct.totalPrice = 234;
+              IsarDatasource().addOrPutOrder(orderProduct: orderProduct);
             },
             heroTag: 'Decrement',
             child: const Icon(Icons.remove),

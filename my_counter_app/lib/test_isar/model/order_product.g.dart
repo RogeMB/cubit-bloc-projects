@@ -86,6 +86,11 @@ const OrderProductSchema = CollectionSchema(
       id: 12,
       name: r'unit_price',
       type: IsarType.double,
+    ),
+    r'uuid': PropertySchema(
+      id: 13,
+      name: r'uuid',
+      type: IsarType.string,
     )
   },
   estimateSize: _orderProductEstimateSize,
@@ -93,7 +98,21 @@ const OrderProductSchema = CollectionSchema(
   deserialize: _orderProductDeserialize,
   deserializeProp: _orderProductDeserializeProp,
   idName: r'isarId',
-  indexes: {},
+  indexes: {
+    r'uuid': IndexSchema(
+      id: 2134397340427724972,
+      name: r'uuid',
+      unique: true,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'uuid',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {
     r'PriceEntity': PriceEntitySchema,
@@ -152,6 +171,7 @@ int _orderProductEstimateSize(
   bytesCount += 3 +
       PriceEntitySchema.estimateSize(
           object.rates, allOffsets[PriceEntity]!, allOffsets);
+  bytesCount += 3 + object.uuid.length * 3;
   return bytesCount;
 }
 
@@ -199,6 +219,7 @@ void _orderProductSerialize(
   writer.writeBool(offsets[10], object.stringify);
   writer.writeDouble(offsets[11], object.totalPrice);
   writer.writeDouble(offsets[12], object.unitPrice);
+  writer.writeString(offsets[13], object.uuid);
 }
 
 OrderProduct _orderProductDeserialize(
@@ -225,6 +246,7 @@ OrderProduct _orderProductDeserialize(
         [],
     id: reader.readLong(offsets[3]),
     isMenu: reader.readBool(offsets[4]),
+    isarId: id,
     menuProductEntity: reader.readObjectList<MenuProductEntity>(
           offsets[5],
           MenuProductEntitySchema.deserialize,
@@ -315,13 +337,15 @@ P _orderProductDeserializeProp<P>(
       return (reader.readDouble(offset)) as P;
     case 12:
       return (reader.readDouble(offset)) as P;
+    case 13:
+      return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
 
 Id _orderProductGetId(OrderProduct object) {
-  return object.isarId;
+  return object.isarId ?? Isar.autoIncrement;
 }
 
 List<IsarLinkBase<dynamic>> _orderProductGetLinks(OrderProduct object) {
@@ -329,7 +353,64 @@ List<IsarLinkBase<dynamic>> _orderProductGetLinks(OrderProduct object) {
 }
 
 void _orderProductAttach(
-    IsarCollection<dynamic> col, Id id, OrderProduct object) {}
+    IsarCollection<dynamic> col, Id id, OrderProduct object) {
+  object.isarId = id;
+}
+
+extension OrderProductByIndex on IsarCollection<OrderProduct> {
+  Future<OrderProduct?> getByUuid(String uuid) {
+    return getByIndex(r'uuid', [uuid]);
+  }
+
+  OrderProduct? getByUuidSync(String uuid) {
+    return getByIndexSync(r'uuid', [uuid]);
+  }
+
+  Future<bool> deleteByUuid(String uuid) {
+    return deleteByIndex(r'uuid', [uuid]);
+  }
+
+  bool deleteByUuidSync(String uuid) {
+    return deleteByIndexSync(r'uuid', [uuid]);
+  }
+
+  Future<List<OrderProduct?>> getAllByUuid(List<String> uuidValues) {
+    final values = uuidValues.map((e) => [e]).toList();
+    return getAllByIndex(r'uuid', values);
+  }
+
+  List<OrderProduct?> getAllByUuidSync(List<String> uuidValues) {
+    final values = uuidValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'uuid', values);
+  }
+
+  Future<int> deleteAllByUuid(List<String> uuidValues) {
+    final values = uuidValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'uuid', values);
+  }
+
+  int deleteAllByUuidSync(List<String> uuidValues) {
+    final values = uuidValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'uuid', values);
+  }
+
+  Future<Id> putByUuid(OrderProduct object) {
+    return putByIndex(r'uuid', object);
+  }
+
+  Id putByUuidSync(OrderProduct object, {bool saveLinks = true}) {
+    return putByIndexSync(r'uuid', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByUuid(List<OrderProduct> objects) {
+    return putAllByIndex(r'uuid', objects);
+  }
+
+  List<Id> putAllByUuidSync(List<OrderProduct> objects,
+      {bool saveLinks = true}) {
+    return putAllByIndexSync(r'uuid', objects, saveLinks: saveLinks);
+  }
+}
 
 extension OrderProductQueryWhereSort
     on QueryBuilder<OrderProduct, OrderProduct, QWhere> {
@@ -408,6 +489,51 @@ extension OrderProductQueryWhere
         upper: upperIsarId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterWhereClause> uuidEqualTo(
+      String uuid) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'uuid',
+        value: [uuid],
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterWhereClause> uuidNotEqualTo(
+      String uuid) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [],
+              upper: [uuid],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [uuid],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [uuid],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'uuid',
+              lower: [],
+              upper: [uuid],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -711,8 +837,26 @@ extension OrderProductQueryFilter
     });
   }
 
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
+      isarIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isarId',
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
+      isarIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isarId',
+      ));
+    });
+  }
+
   QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> isarIdEqualTo(
-      Id value) {
+      Id? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isarId',
@@ -723,7 +867,7 @@ extension OrderProductQueryFilter
 
   QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
       isarIdGreaterThan(
-    Id value, {
+    Id? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -737,7 +881,7 @@ extension OrderProductQueryFilter
 
   QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
       isarIdLessThan(
-    Id value, {
+    Id? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -750,8 +894,8 @@ extension OrderProductQueryFilter
   }
 
   QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> isarIdBetween(
-    Id lower,
-    Id upper, {
+    Id? lower,
+    Id? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -1277,6 +1421,140 @@ extension OrderProductQueryFilter
       ));
     });
   }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> uuidEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
+      uuidGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> uuidLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> uuidBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'uuid',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
+      uuidStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> uuidEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> uuidContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition> uuidMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'uuid',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
+      uuidIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterFilterCondition>
+      uuidIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'uuid',
+        value: '',
+      ));
+    });
+  }
 }
 
 extension OrderProductQueryObject
@@ -1420,6 +1698,18 @@ extension OrderProductQuerySortBy
       return query.addSortBy(r'unit_price', Sort.desc);
     });
   }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterSortBy> sortByUuid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.asc);
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterSortBy> sortByUuidDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.desc);
+    });
+  }
 }
 
 extension OrderProductQuerySortThenBy
@@ -1534,6 +1824,18 @@ extension OrderProductQuerySortThenBy
       return query.addSortBy(r'unit_price', Sort.desc);
     });
   }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterSortBy> thenByUuid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.asc);
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QAfterSortBy> thenByUuidDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.desc);
+    });
+  }
 }
 
 extension OrderProductQueryWhereDistinct
@@ -1584,6 +1886,13 @@ extension OrderProductQueryWhereDistinct
   QueryBuilder<OrderProduct, OrderProduct, QDistinct> distinctByUnitPrice() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'unit_price');
+    });
+  }
+
+  QueryBuilder<OrderProduct, OrderProduct, QDistinct> distinctByUuid(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'uuid', caseSensitive: caseSensitive);
     });
   }
 }
@@ -1675,6 +1984,12 @@ extension OrderProductQueryProperty
   QueryBuilder<OrderProduct, double, QQueryOperations> unitPriceProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'unit_price');
+    });
+  }
+
+  QueryBuilder<OrderProduct, String, QQueryOperations> uuidProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'uuid');
     });
   }
 }
